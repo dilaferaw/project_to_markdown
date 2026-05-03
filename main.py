@@ -47,10 +47,10 @@ class ProjectToMarkdownApp:
     def show_about_dialog(self):
         messagebox.showinfo(
             "About ProjectToMarkdown",
-            f"ProjectToMarkdown v{APP_VERSION}\n\n"
+            f"ProjectToMarkdown v{1.0}\n\n"
             "Bridge your local projects to free chat LLMs.\n"
-            "https://github.com/example/project-to-markdown\n\n"
-            "Developed by Your Name",
+            "https://github.com/dilaferaw/project_to_markdown\n\n"
+            "Developed by Dilaferaw aka @Kaatecode",
             parent=self.window,
         )
 
