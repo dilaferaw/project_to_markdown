@@ -34,7 +34,7 @@ pip install tiktoken   # optional, for accurate token counting
 ## Quick start
 
 ```bash
-git clone https://github.com/yourusername/project_to_markdown.git
+git clone https://github.com/dilaferaw/project_to_markdown.git
 cd project_to_markdown
 python3 main.py
 ```
