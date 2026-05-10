@@ -71,6 +71,9 @@ class ExportTab(ttk.Frame):
         self.prompt_btn = ttk.Button(btn_frame, text="Full Prompt & Copy", command=self._on_generate_prompt, state=tk.DISABLED)
         self.prompt_btn.pack(side=tk.LEFT, padx=(0, 5))
 
+        self.save_prompt_btn = ttk.Button(btn_frame, text="Save Full Prompt...", command=self._on_save_full_prompt, state=tk.DISABLED)
+        self.save_prompt_btn.pack(side=tk.LEFT, padx=(0, 5))
+
         self.system_prompt_btn = ttk.Button(btn_frame, text="Copy System Prompt", command=self._on_copy_system_prompt)
         self.system_prompt_btn.pack(side=tk.LEFT)
 
@@ -151,6 +154,7 @@ class ExportTab(ttk.Frame):
         self.copy_md_btn.configure(state=tk.NORMAL)
         self.save_md_btn.configure(state=tk.NORMAL)
         self.prompt_btn.configure(state=tk.NORMAL)
+        self.save_prompt_btn.configure(state=tk.NORMAL)
 
         tokens = count_tokens(md)
         self.token_label.configure(text=f"Markdown tokens: ~{tokens}")
@@ -178,6 +182,21 @@ class ExportTab(ttk.Frame):
         tokens_full = count_tokens(full_prompt)
         tokens_md = count_tokens(self.app.generated_markdown)
         self.token_label.configure(text=f"Markdown tokens: ~{tokens_md}  |  Full prompt tokens: ~{tokens_full}")
+
+    def _on_save_full_prompt(self):
+        full_prompt = generate_full_prompt(self.app.generated_markdown)
+        path = filedialog.asksaveasfilename(
+            title="Save Full Prompt",
+            parent=self.app.window,
+            defaultextension=".md",
+            filetypes=[("Markdown files", "*.md"), ("All files", "*.*")],
+        )
+        if path:
+            try:
+                Path(path).write_text(full_prompt, encoding="utf-8")
+                self.app.show_info(f"Full prompt saved to {path}")
+            except Exception as e:
+                self.app.show_error(f"Failed to save: {e}")
 
     def _on_copy_system_prompt(self):
         self._copy_to_clipboard(FOOLPROOF_PROMPT_TEMPLATE, "System prompt copied to clipboard.")
