@@ -38,7 +38,18 @@ class ExportTab(ttk.Frame):
         preview_frame.grid_rowconfigure(0, weight=1)
         preview_frame.grid_columnconfigure(0, weight=1)
 
-        self.preview_text = tk.Text(preview_frame, wrap=tk.NONE, state=tk.DISABLED)
+        self.preview_text = tk.Text(
+            preview_frame,
+            wrap=tk.NONE,
+            bg="#2d2d2d",
+            fg="#dcdcdc",
+            insertbackground="#dcdcdc",
+            relief="flat",
+            borderwidth=0,
+            padx=8,
+            pady=8,
+            state=tk.DISABLED,
+        )
         self.preview_text.grid(row=0, column=0, sticky="nsew")
 
         preview_scroll_y = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self.preview_text.yview)
@@ -68,14 +79,12 @@ class ExportTab(ttk.Frame):
         self.token_label.grid(row=4, column=0, pady=(5, 0), sticky="w")
 
     # -----------------------------------------------------------------
-    # Clipboard helper – uses system tools (xclip / wl-copy) for reliability
+    # Clipboard helper
     # -----------------------------------------------------------------
     def _copy_to_clipboard(self, text: str, success_msg: str):
-        """Copy text to OS clipboard using xclip (X11) or wl-copy (Wayland)."""
-        # Try xclip (X11)
         if shutil.which("xclip"):
             try:
-                proc = subprocess.run(
+                subprocess.run(
                     ["xclip", "-selection", "clipboard"],
                     input=text.encode("utf-8"),
                     check=True,
@@ -84,11 +93,9 @@ class ExportTab(ttk.Frame):
                 return
             except Exception:
                 pass
-
-        # Try wl-copy (Wayland)
         if shutil.which("wl-copy"):
             try:
-                proc = subprocess.run(
+                subprocess.run(
                     ["wl-copy"],
                     input=text.encode("utf-8"),
                     check=True,
@@ -97,8 +104,6 @@ class ExportTab(ttk.Frame):
                 return
             except Exception:
                 pass
-
-        # Fallback to Tkinter's built‑in clipboard (may not work everywhere)
         try:
             self.app.window.clipboard_clear()
             self.app.window.clipboard_append(text)

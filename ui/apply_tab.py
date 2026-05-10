@@ -23,15 +23,32 @@ class ApplyTab(ttk.Frame):
         text_frame.grid_rowconfigure(0, weight=1)
         text_frame.grid_columnconfigure(0, weight=1)
 
-        self.ai_response_text = tk.Text(text_frame, wrap=tk.WORD)
+        self.ai_response_text = tk.Text(
+            text_frame,
+            wrap=tk.WORD,
+            bg="#2d2d2d",
+            fg="#dcdcdc",
+            insertbackground="#dcdcdc",
+            relief="flat",
+            borderwidth=0,
+            padx=8,
+            pady=8,
+        )
         self.ai_response_text.grid(row=0, column=0, sticky="nsew")
+
         scroll_y = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=self.ai_response_text.yview)
         scroll_y.grid(row=0, column=1, sticky="ns")
         self.ai_response_text.configure(yscrollcommand=scroll_y.set)
 
-        # --- Parse button ---
-        parse_btn = ttk.Button(self, text="Parse Response", command=self._on_parse)
-        parse_btn.grid(row=2, column=0, pady=(5, 5), sticky="w")
+        # --- Button row (Parse + Clear) ---
+        btn_row = ttk.Frame(self)
+        btn_row.grid(row=2, column=0, pady=(5, 5), sticky="w")
+
+        parse_btn = ttk.Button(btn_row, text="Parse Response", command=self._on_parse)
+        parse_btn.pack(side=tk.LEFT, padx=(0, 5))
+
+        clear_btn = ttk.Button(btn_row, text="Clear", command=self._on_clear)
+        clear_btn.pack(side=tk.LEFT)
 
         # --- Changes tree ---
         tree_frame = ttk.Frame(self)
@@ -39,7 +56,12 @@ class ApplyTab(ttk.Frame):
         tree_frame.grid_rowconfigure(0, weight=1)
         tree_frame.grid_columnconfigure(0, weight=1)
 
-        self.tree = ttk.Treeview(tree_frame, columns=("action", "path"), show="tree headings", selectmode="none")
+        self.tree = ttk.Treeview(
+            tree_frame,
+            columns=("action", "path"),
+            show="tree headings",
+            selectmode="none",
+        )
         self.tree.heading("#0", text="Apply?")
         self.tree.heading("path", text="File")
         self.tree.heading("action", text="Action")
@@ -98,6 +120,13 @@ class ApplyTab(ttk.Frame):
         if path:
             self.dest_entry.delete(0, tk.END)
             self.dest_entry.insert(0, path)
+
+    def _on_clear(self):
+        self.ai_response_text.delete("1.0", tk.END)
+        # also clear the parsed results and tree
+        self.app.parsed_changes = {}
+        for item in self.tree.get_children():
+            self.tree.delete(item)
 
     def _on_parse(self):
         text = self.ai_response_text.get("1.0", tk.END)
