@@ -96,8 +96,8 @@ class ProjectToMarkdownApp:
             "About ProjectToMarkdown",
             f"ProjectToMarkdown v{APP_VERSION}\n\n"
             "Bridge your local projects to free chat LLMs.\n"
-            "https://github.com/example/project-to-markdown\n\n"
-            "Developed by Your Name",
+            "https://github.com/dilaferaw/project-to-markdown\n\n"
+            "Developed by Dilaferaw",
             parent=self.window,
         )
 

@@ -1,20 +1,21 @@
-"""Shared constants and utility functions."""
+"""Shared constants and utility functions – backed by JSON config."""
 
-DEFAULT_TEXT_EXTENSIONS = {
-    ".py", ".rs", ".html", ".css", ".js", ".ts", ".json", ".yaml", ".yml",
-    ".toml", ".md", ".txt", ".c", ".cpp", ".h", ".hpp", ".java", ".go",
-    ".rb", ".php", ".swift", ".kt", ".kts", ".sh", ".bash", ".zsh",
-    ".xml", ".svg", ".cf", ".conf", ".ini", ".cfg", ".sql", ".r", ".lua",
-    ".pl", ".pm", ".dart", ".ex", ".exs", ".erl", ".hrl", ".hs", ".lhs",
-    ".vim", ".emacs", ".dockerfile", ".makefile", ".cmake", ".gradle"
-}
+from core.config import get_config
 
-DEFAULT_EXCLUDED_DIRS = {
-    ".git", "node_modules", "target", "venv", ".venv", "__pycache__",
-    "build", "dist", ".next", ".nuxt", "out", "bin", "obj"
-}
+# Load config once at import time
+_cfg = get_config()
+DEFAULT_TEXT_EXTENSIONS = _cfg.text_extensions
+DEFAULT_EXCLUDED_DIRS   = _cfg.excluded_dirs
+MAX_FILE_SIZE_KB        = _cfg.max_file_size_kb
 
-MAX_FILE_SIZE_KB = 500
+def reload_config():
+    """Update the module‑level constants from the config file.
+    Call this after changing settings at runtime."""
+    global DEFAULT_TEXT_EXTENSIONS, DEFAULT_EXCLUDED_DIRS, MAX_FILE_SIZE_KB
+    fresh = get_config()
+    DEFAULT_TEXT_EXTENSIONS = fresh.text_extensions
+    DEFAULT_EXCLUDED_DIRS   = fresh.excluded_dirs
+    MAX_FILE_SIZE_KB        = fresh.max_file_size_kb
 
 # ── Token counting ────────────────────────────────────────────
 
