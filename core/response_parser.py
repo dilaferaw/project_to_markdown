@@ -122,9 +122,11 @@ class AIResponseParser:
             start = int(match.group(1))
             end = int(match.group(2)) if match.group(2) else start
             content = match.group(3)
-            if content.startswith('\n'):
+            # Strip at most one leading/trailing newline from tag formatting,
+            # preserving intentional blank lines in the patch content
+            if content.startswith('\n') and len(content) > 1:
                 content = content[1:]
-            if content.endswith('\n'):
+            if content.endswith('\n') and len(content) > 1:
                 content = content[:-1]
             patches.append({"start": start, "end": end, "content": content})
         return patches if patches else None

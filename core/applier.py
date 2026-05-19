@@ -76,12 +76,12 @@ def _apply_changes_to(root: Path, changes: Dict[str, Dict],
                           f"lines {patch['start']}-{patch['end']} "
                           f"(file has {len(new_lines)} lines).")
                     continue
-                patch_lines = patch["content"].split('\n')
+                # Use splitlines() to properly handle trailing newlines without creating empty strings
+                patch_lines = patch["content"].splitlines()
                 new_lines[start_idx:end_idx+1] = patch_lines
             final_content = '\n'.join(new_lines)
         else:
             final_content = change.get("content", "")
-
         # Convert backtick placeholders the AI was instructed to use
         final_content = final_content.replace("[BACK3]", "```").replace("[BACK]", "`")
 

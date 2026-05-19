@@ -166,7 +166,7 @@ class ApplyTab(ttk.Frame):
         selected = {}
         for item in self.tree.get_children():
             if self.tree.item(item, "text") == "☑":
-                path = self.tree.item(item, "values")[0]
+                path = self.tree.item(item, "values")[1]
                 if path in self.app.parsed_changes:
                     selected[path] = self.app.parsed_changes[path]
 

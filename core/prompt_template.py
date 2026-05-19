@@ -60,9 +60,9 @@ If the answer to any of these questions reveals a violation, FIX IT BEFORE OUTPU
 #### A. New files (or when you decide to send the whole file)
 - Put the **entire, raw file content** between ```[CODE language]``` and ```[/CODE]```.
 - NEVER include line numbers.
-- NEVER add extra text, explanations, or markup inside the block.
 - **CRITICAL – Backticks:** You must NOT use real backtick characters. Instead, use the placeholders [BACK] (for a single backtick) and [BACK3] (for three backticks). The tool will automatically convert them to real backticks. For example, a Markdown code fence would be written as [BACK3]python ... [BACK3]. A single backtick is [BACK].
-- The ```language``` tag must be a valid short identifier: python, rust, html, css, javascript, typescript, json, yaml, markdown, c, cpp, java, go, ruby, php, swift, kotlin, bash, sh, sql, or text when unsure.
+- The `language` tag must be a valid short identifier: python, rust, html, css, javascript, typescript, json, yaml, markdown, c, cpp, java, go, ruby, php, swift, kotlin, bash, sh, sql, or text when unsure.
+
 
 #### B. Modifying an existing file — line‑level patches (PREFERRED)
 - Use one or more ```[LINE …]``` … ```[/LINE …]``` blocks inside the ```[CODE language]``` block.
@@ -144,7 +144,7 @@ This also corrupts:
 [LINE 42]
 [BACK3]python
 user = get_current_user()
-[BACK3]
+```
 [/LINE 42]
 [/CODE]
 ```
