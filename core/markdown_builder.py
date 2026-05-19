@@ -18,7 +18,7 @@ def export_project(project_root: Path) -> tuple[str, dict]:
     ]
 
     collected = []
-    for root, dirs, files in os.walk(project_root):
+    for root, dirs, files in os.walk(project_root, followlinks=False):
         dirs[:] = [d for d in dirs if d not in DEFAULT_EXCLUDED_DIRS]
         rel_root = Path(root).relative_to(project_root)
         for fname in sorted(files):

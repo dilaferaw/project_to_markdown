@@ -141,7 +141,7 @@ class ApplyTab(ttk.Frame):
             self.tree.delete(item)
         for path, change in self.app.parsed_changes.items():
             action = change["action"].capitalize()
-            self.tree.insert("", "end", text="☑", values=(path, action))
+            self.tree.insert("", "end", text="☑", values=(action, path))
 
     def _on_tree_toggle(self, event):
         region = self.tree.identify_region(event.x, event.y)

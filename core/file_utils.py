@@ -52,7 +52,7 @@ def generate_tree(project_root: Path) -> str:
 
     # Fallback: pure Python tree
     tree_lines = [str(project_root)]
-    for root, dirs, files in os.walk(project_root):
+    for root, dirs, files in os.walk(project_root, followlinks=False):
         dirs[:] = [d for d in dirs if d not in DEFAULT_EXCLUDED_DIRS]
         level = root.replace(str(project_root), "").count(os.sep)
         indent = "│   " * level + "├── " if level > 0 else ""

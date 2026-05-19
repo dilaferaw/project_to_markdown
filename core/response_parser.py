@@ -19,7 +19,7 @@ class AIResponseParser:
         AIResponseParser.warnings = []          # fresh warnings
 
         # Pre‑process backtick placeholders
-        text = text.replace("```", "```").replace("`", "`")
+        text = text.replace("[BACK3]", "```").replace("[BACK]", "`")
 
         changes = {}
 
@@ -79,7 +79,7 @@ class AIResponseParser:
 
             # Process the block (same logic as before)
             code_match = re.search(
-                r'\[CODE\s+\w*\]\s*\n(.*?)\n\s*\[/CODE\]',
+                r'\[CODE(?:\s+[^\]]+)?\]\s*\n(.*?)\n\s*\[/CODE\]',
                 raw_block, re.DOTALL | re.IGNORECASE
             )
             if code_match:

@@ -23,6 +23,12 @@ class ChangeApplier:
         """Copy the project to a new folder, then apply changes there."""
         if dest_root.exists():
             raise FileExistsError(f"Destination {dest_root} already exists.")
+        try:
+            dest_root.resolve().relative_to(project_root.resolve())
+            raise ValueError("Destination cannot be inside the source project folder.")
+        except ValueError as e:
+            if "Destination cannot" in str(e):
+                raise
 
         def ignore_func(directory, contents):
             return [c for c in contents if c in DEFAULT_EXCLUDED_DIRS]
@@ -65,11 +71,19 @@ def _apply_changes_to(root: Path, changes: Dict[str, Dict],
             for patch in patches_sorted:
                 start_idx = patch["start"] - 1
                 end_idx = patch["end"] - 1
+                if start_idx < 0 or end_idx >= len(new_lines):
+                    print(f"Skipping out-of-bounds patch for '{rel_path}': "
+                          f"lines {patch['start']}-{patch['end']} "
+                          f"(file has {len(new_lines)} lines).")
+                    continue
                 patch_lines = patch["content"].split('\n')
                 new_lines[start_idx:end_idx+1] = patch_lines
             final_content = '\n'.join(new_lines)
         else:
             final_content = change.get("content", "")
+
+        # Convert backtick placeholders the AI was instructed to use
+        final_content = final_content.replace("[BACK3]", "```").replace("[BACK]", "`")
 
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(final_content, encoding='utf-8')
