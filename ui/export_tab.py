@@ -1,11 +1,11 @@
-"""Export tab: project selection, markdown generation, clipboard/save."""
+"""Export tab: project selection, file selection, markdown generation, clipboard/save."""
 
 import subprocess
 import shutil
 import tkinter as tk
 from tkinter import ttk, filedialog
 from pathlib import Path
-from core.markdown_builder import export_project
+from core.markdown_builder import export_project, scan_project_files
 from core.prompt_template import generate_full_prompt, FOOLPROOF_PROMPT_TEMPLATE
 from utils import count_tokens
 
@@ -15,9 +15,9 @@ class ExportTab(ttk.Frame):
         super().__init__()
         self.app = app
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(4, weight=1)  # preview row expands
 
-        # --- Project selection row ---
+        # --- Row 0: Project selection ---
         sel_frame = ttk.Frame(self)
         sel_frame.grid(row=0, column=0, sticky="ew", pady=(0, 5))
 
@@ -28,13 +28,52 @@ class ExportTab(ttk.Frame):
         browse_btn = ttk.Button(sel_frame, text="Browse...", command=self._on_browse_project)
         browse_btn.pack(side=tk.RIGHT)
 
-        # --- Generate button ---
-        self.generate_btn = ttk.Button(self, text="Scan & Generate Markdown", command=self._on_generate)
-        self.generate_btn.grid(row=2, column=0, pady=(0, 5), sticky="w")
+        # --- Row 1: Scan button ---
+        self.scan_btn = ttk.Button(self, text="Scan Project", command=self._on_scan)
+        self.scan_btn.grid(row=1, column=0, pady=(0, 5), sticky="w")
 
-        # --- Preview area ---
+        # --- Row 2: File selection tree ---
+        file_list_frame = ttk.Frame(self)
+        file_list_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 2))
+        file_list_frame.grid_rowconfigure(0, weight=1)
+        file_list_frame.grid_columnconfigure(0, weight=1)
+
+        self.file_tree = ttk.Treeview(
+            file_list_frame,
+            columns=("path",),
+            show="tree headings",
+            selectmode="none",
+            height=8,
+        )
+        self.file_tree.heading("#0", text="✓", anchor=tk.CENTER)
+        self.file_tree.heading("path", text="File")
+        self.file_tree.column("#0", width=40, stretch=False, anchor=tk.CENTER)
+        self.file_tree.column("path", width=500)
+        self.file_tree.grid(row=0, column=0, sticky="nsew")
+        self.file_tree.bind("<Button-1>", self._on_file_toggle)
+
+        file_tree_scroll = ttk.Scrollbar(file_list_frame, orient=tk.VERTICAL, command=self.file_tree.yview)
+        file_tree_scroll.grid(row=0, column=1, sticky="ns")
+        self.file_tree.configure(yscrollcommand=file_tree_scroll.set)
+
+        # --- Row 3: Select-all / Select-none / Generate ---
+        ctrl_frame = ttk.Frame(self)
+        ctrl_frame.grid(row=3, column=0, sticky="w", pady=(2, 5))
+
+        ttk.Button(ctrl_frame, text="Select All", command=self._on_select_all).pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Button(ctrl_frame, text="Select None", command=self._on_select_none).pack(side=tk.LEFT, padx=(0, 10))
+
+        self.generate_btn = ttk.Button(
+            ctrl_frame,
+            text="Generate Markdown from Selected",
+            command=self._on_generate,
+            state=tk.DISABLED,
+        )
+        self.generate_btn.pack(side=tk.LEFT)
+
+        # --- Row 4: Preview area (expands) ---
         preview_frame = ttk.Frame(self)
-        preview_frame.grid(row=1, column=0, sticky="nsew")
+        preview_frame.grid(row=4, column=0, sticky="nsew")
         preview_frame.grid_rowconfigure(0, weight=1)
         preview_frame.grid_columnconfigure(0, weight=1)
 
@@ -58,9 +97,9 @@ class ExportTab(ttk.Frame):
         preview_scroll_x.grid(row=1, column=0, sticky="ew")
         self.preview_text.configure(yscrollcommand=preview_scroll_y.set, xscrollcommand=preview_scroll_x.set)
 
-        # --- Action buttons ---
+        # --- Row 5: Action buttons ---
         btn_frame = ttk.Frame(self)
-        btn_frame.grid(row=3, column=0, pady=(5, 0), sticky="ew")
+        btn_frame.grid(row=5, column=0, pady=(5, 0), sticky="ew")
 
         self.copy_md_btn = ttk.Button(btn_frame, text="Copy Markdown", command=self._on_copy_md, state=tk.DISABLED)
         self.copy_md_btn.pack(side=tk.LEFT, padx=(0, 5))
@@ -77,13 +116,51 @@ class ExportTab(ttk.Frame):
         self.system_prompt_btn = ttk.Button(btn_frame, text="Copy System Prompt", command=self._on_copy_system_prompt)
         self.system_prompt_btn.pack(side=tk.LEFT)
 
-        # --- Token info ---
+        # --- Row 6: Token info ---
         self.token_label = ttk.Label(self, text="")
-        self.token_label.grid(row=4, column=0, pady=(5, 0), sticky="w")
+        self.token_label.grid(row=6, column=0, pady=(5, 0), sticky="w")
+
+    # -----------------------------------------------------------------
+    # File tree helpers
+    # -----------------------------------------------------------------
+
+    def _populate_file_tree(self, file_paths):
+        """Fill the file tree with all discovered files, all pre-checked."""
+        for item in self.file_tree.get_children():
+            self.file_tree.delete(item)
+        for rel_path in file_paths:
+            self.file_tree.insert("", "end", text="☑", values=(rel_path,))
+
+    def _on_file_toggle(self, event):
+        region = self.file_tree.identify_region(event.x, event.y)
+        if region != "tree":
+            return
+        item = self.file_tree.identify_row(event.y)
+        if not item:
+            return
+        current = self.file_tree.item(item, "text")
+        self.file_tree.item(item, text="☐" if current == "☑" else "☑")
+
+    def _on_select_all(self):
+        for item in self.file_tree.get_children():
+            self.file_tree.item(item, text="☑")
+
+    def _on_select_none(self):
+        for item in self.file_tree.get_children():
+            self.file_tree.item(item, text="☐")
+
+    def _checked_files(self):
+        """Return set of relative paths that are currently checked."""
+        return {
+            self.file_tree.item(item, "values")[0]
+            for item in self.file_tree.get_children()
+            if self.file_tree.item(item, "text") == "☑"
+        }
 
     # -----------------------------------------------------------------
     # Clipboard helper
     # -----------------------------------------------------------------
+
     def _copy_to_clipboard(self, text: str, success_msg: str):
         if shutil.which("xclip"):
             try:
@@ -121,29 +198,52 @@ class ExportTab(ttk.Frame):
     # -----------------------------------------------------------------
     # Event handlers
     # -----------------------------------------------------------------
+
     def _on_browse_project(self):
         path = filedialog.askdirectory(title="Select Project Folder", parent=self.app.window)
         if path:
             self.project_entry.delete(0, tk.END)
             self.project_entry.insert(0, path)
 
-    def _on_generate(self):
+    def _on_scan(self):
+        """Scan the project and populate the file selection tree."""
         project_path = self.project_entry.get().strip()
         if not project_path or not Path(project_path).is_dir():
             self.app.show_error("Please select a valid project folder.")
             return
         self.app.current_project_root = Path(project_path)
+        self.scan_btn.configure(text="Scanning...", state=tk.DISABLED)
+        self.update_idletasks()
+        try:
+            files = scan_project_files(self.app.current_project_root)
+            if not files:
+                self.app.show_error("No text files found in the selected folder.")
+                return
+            self._populate_file_tree(files)
+            self.generate_btn.configure(state=tk.NORMAL)
+        except Exception as e:
+            self.app.show_error(f"Scan failed: {e}")
+        finally:
+            self.scan_btn.configure(text="Scan Project", state=tk.NORMAL)
+
+    def _on_generate(self):
+        """Generate markdown from the currently checked files."""
+        selected = self._checked_files()
+        if not selected:
+            self.app.show_error("No files selected. Check at least one file.")
+            return
+
         self.generate_btn.configure(text="Generating...", state=tk.DISABLED)
         self.update_idletasks()
         try:
-            md, contents = export_project(self.app.current_project_root)
+            md, contents = export_project(self.app.current_project_root, include_only=selected)
             self.app.generated_markdown = md
             self.app.file_contents = contents
             self._update_preview(md)
         except Exception as e:
             self.app.show_error(f"Export failed: {e}")
         finally:
-            self.generate_btn.configure(text="Scan & Generate Markdown", state=tk.NORMAL)
+            self.generate_btn.configure(text="Generate Markdown from Selected", state=tk.NORMAL)
 
     def _update_preview(self, md):
         self.preview_text.configure(state=tk.NORMAL)

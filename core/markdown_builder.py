@@ -2,13 +2,32 @@
 
 import os
 from pathlib import Path
+from typing import Optional, Set, List
 from core.file_utils import generate_tree, is_text_file
 from utils import DEFAULT_EXCLUDED_DIRS
 
 
-def export_project(project_root: Path) -> tuple[str, dict]:
+def scan_project_files(project_root: Path) -> List[str]:
+    """Return sorted list of relative file paths that would be included in an export."""
+    files = []
+    for root, dirs, filenames in os.walk(project_root, followlinks=False):
+        dirs[:] = sorted([d for d in dirs if d not in DEFAULT_EXCLUDED_DIRS])
+        rel_root = Path(root).relative_to(project_root)
+        for fname in sorted(filenames):
+            fpath = Path(root) / fname
+            if is_text_file(fpath):
+                files.append(str(rel_root / fname))
+    return files
+
+
+def export_project(project_root: Path, include_only: Optional[Set[str]] = None) -> tuple:
     """Generate the complete markdown representation of the project.
-    Returns (markdown_string, dict_of_original_contents)."""
+    Returns (markdown_string, dict_of_original_contents).
+
+    If include_only is provided, only files whose relative path is in that set
+    are included in the File Contents section (the tree still shows the full
+    project structure).
+    """
     tree_str = generate_tree(project_root)
 
     parts = [
@@ -26,6 +45,10 @@ def export_project(project_root: Path) -> tuple[str, dict]:
             if is_text_file(fpath):
                 rel_path = str(rel_root / fname)
                 collected.append((rel_path, fpath))
+
+    # Filter to user-selected files when a selection is provided
+    if include_only is not None:
+        collected = [(rp, fp) for rp, fp in collected if rp in include_only]
 
     # Store original content for later patching
     original_contents = {}
