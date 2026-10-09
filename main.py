@@ -26,13 +26,30 @@ def main() -> None:
         description="Bridge your local projects to free chat LLMs – "
                     "no API keys needed.",
     )
-    parser.add_argument("--port", type=int, default=0,
-                        help="port to serve on (0 = a random free port, default)")
-    parser.add_argument("--no-browser", action="store_true",
-                        help="do not open the web browser automatically")
+    parser.add_argument(
+        "-p",
+        "--port",
+        type=int,
+        default=0,
+        help="port to serve on (0 = a random free port, default)",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help=(
+            "address to bind to (default: 127.0.0.1, loopback only). "
+            "Use 0.0.0.0 to expose the server to a Docker container or "
+            "the local network."
+        ),
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="do not open the web browser automatically",
+    )
     args = parser.parse_args()
 
-    server = create_server(port=args.port)
+    server = create_server(host=args.host, port=args.port)
     host, port = server.server_address[0], server.server_address[1]
     url = f"http://{host}:{port}/"
 

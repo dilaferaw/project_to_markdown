@@ -316,12 +316,17 @@ _API_ROUTES = {
 }
 
 
-def create_server(port: int = 0) -> ThreadingHTTPServer:
-    """Create (but do not start) the loopback server.
+def create_server(port: int = 0, host: str = "127.0.0.1") -> ThreadingHTTPServer:
+    """Create (but do not start) the HTTP server.
 
     ``port=0`` asks the OS for any free port; the real port is available as
     ``server.server_address[1]``.  The per-run CSRF token is ``server.token``.
+
+    ``host`` defaults to loopback so nothing outside this machine can reach
+    the server.  ``--host 0.0.0.0`` (from ``main.py``'s ``-p/--port`` and
+    ``--host`` flags) is the standard way to expose it to a Docker container
+    or the local network.
     """
-    server = ThreadingHTTPServer(("127.0.0.1", port), _Handler)
+    server = ThreadingHTTPServer((host, port), _Handler)
     server.token = secrets.token_urlsafe(16)  # type: ignore[attr-defined]
     return server
