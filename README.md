@@ -6,14 +6,14 @@ ProjectToMarkdown scans a local coding project and produces a single `.md` file 
 
 ## Features
 
-- **Native cross‑platform GUI** – Tkinter, runs on Linux, Windows, macOS
+- **Local web UI** – runs in your browser on Linux, Windows and macOS; no GUI toolkit required
 - **File browser** for effortless project selection
 - **One‑click “Full Prompt”** – inserts foolproof instructions so even basic LLMs reply in a machine‑parseable format
 - **Line‑level patching** – the AI can send only changed lines, saving tokens
 - **System prompt button** – copy only the instruction block to set up a new chat
 - **Token counting** – see approximate token usage before pasting (requires `tiktoken`, optional)
 - **Three apply modes:** modify in‑place (with auto‑backup), export to new folder, create new project from scratch
-- **100% offline** – no API calls, no telemetry
+- **100% offline** – no API calls, no telemetry (the server binds to `127.0.0.1` only)
 
 ## Installation
 
@@ -21,15 +21,15 @@ ProjectToMarkdown scans a local coding project and produces a single `.md` file 
 
 ```bash
 sudo apt update
-sudo apt install python3 python3-tk xclip tree
+sudo apt install python3 tree
 pip install tiktoken   # optional, for accurate token counting
 ```
 
 ### Other platforms (Windows, macOS, BookwormPup64, etc.)
 
-1. Install **Python 3.10+** from [python.org](https://www.python.org/downloads/)
+1. Install **Python 3.12+** from [python.org](https://www.python.org/downloads/)
 2. Install `tiktoken` (optional): `pip install tiktoken`
-3. Tkinter is included with Python on most platforms. If missing, install it via your package manager.
+3. No GUI toolkit is required – the app runs in your browser.
 
 ## Quick start
 
@@ -39,8 +39,11 @@ cd project_to_markdown
 python3 main.py
 ```
 
+This starts a local web server and opens the app in your default browser
+(pass `--no-browser` to print the URL instead, or `--port 8765` for a fixed port).
+
 1. Click **Browse…** and select your project folder
-2. Click **Scan & Generate Markdown**
+2. Click **Scan Project**, tick the files you want, then **Generate Markdown from Selected**
 3. **(Recommended)** Click **Full Prompt & Copy** – the complete prompt (instructions + project data) is now in your clipboard
 4. Paste it into any free chat LLM (ChatGPT, Claude, etc.) and add your request
 5. Copy the AI’s entire reply
@@ -49,27 +52,29 @@ python3 main.py
 
 ## Requirements
 
-- Python 3.8+ (3.10+ recommended)
+- Python 3.12+
 - `tiktoken` (optional) – `pip install tiktoken`
 - `tree` (optional, Linux) – prettier directory tree output
-- `xclip` (optional, Linux) – reliable clipboard copying
 
 ## Project structure
 
 ```text
 project_to_markdown/
-├── main.py                  # Entry point – Tkinter app
+├── main.py                  # Entry point – starts the local web server
+├── server.py                # Loopback HTTP server + JSON API (stdlib only)
 ├── utils.py                 # Shared constants, token counting
 ├── core/
 │   ├── applier.py           # Applies changes to filesystem
+│   ├── config.py            # JSON config, sanitised on load
 │   ├── file_utils.py        # File type detection, tree generation
 │   ├── markdown_builder.py  # Builds the export Markdown
 │   ├── prompt_template.py   # Foolproof system prompt
 │   └── response_parser.py   # Parses structured AI replies
-├── ui/
-│   ├── export_tab.py        # Export tab UI
-│   ├── apply_tab.py         # Project Builder tab UI
-│   └── settings_tab.py      # Settings tab UI
+├── web/
+│   ├── index.html           # App shell (tabs + modals)
+│   ├── app.js               # Front-end logic
+│   └── style.css            # Dark theme
+├── tests/                   # pytest suite: parser, applier, builder, utils, config, server
 ├── README.md
 ├── LICENSE
 ├── .gitignore

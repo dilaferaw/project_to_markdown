@@ -21,11 +21,11 @@ fi
 echo "[1/3] Checking system dependencies..."
 if [ "$PKG_MGR" = "apt" ]; then
     sudo apt update
-    sudo apt install -y python3 python3-tk xclip tree
+    sudo apt install -y python3 tree
 elif [ "$PKG_MGR" = "dnf" ]; then
-    sudo dnf install -y python3 python3-tkinter xclip tree
+    sudo dnf install -y python3 tree
 elif [ "$PKG_MGR" = "pacman" ]; then
-    sudo pacman -S --noconfirm python tk xclip tree
+    sudo pacman -S --noconfirm python tree
 fi
 echo "   Done."
 
@@ -47,5 +47,4 @@ echo "Run the app:"
 echo "  cd $(dirname "$0")"
 echo "  python3 main.py"
 echo ""
-echo "Optional: install pyperclip for clipboard support on Wayland:"
-echo "  pip install --user pyperclip"
+echo "The app opens in your browser (use --no-browser to just print the URL)."
