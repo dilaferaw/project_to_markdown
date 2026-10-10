@@ -1,6 +1,7 @@
 """JSON‑based configuration for ProjectToMarkdown."""
 
 import json
+import os
 from pathlib import Path
 from typing import List, Set
 
@@ -91,7 +92,10 @@ class Config:
     """Application configuration loaded from a JSON file."""
     
     def __init__(self):
-        self.config_dir = Path.home() / ".config" / "project-to-markdown"
+        self.config_dir = Path(
+            os.environ.get("PTM_CONFIG_DIR")
+            or Path.home() / ".config" / "project-to-markdown"
+        )
         self.config_file = self.config_dir / "config.json"
         self.data = {}
         self.load()
