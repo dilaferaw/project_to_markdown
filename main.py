@@ -1,106 +1,72 @@
 #!/usr/bin/env python3
-"""ProjectToMarkdown – cross‑platform edition (Tkinter)"""
+"""ProjectToMarkdown – local web UI entry point.
 
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+Starts a loopback HTTP server (see ``server.py``) and opens the app in your
+default browser.  The UI is plain HTML/JS served from ``web/``, so the app
+runs anywhere Python runs – no GUI toolkit required.
 
-from ui.export_tab import ExportTab
-from ui.apply_tab import ApplyTab
-from ui.settings_tab import SettingsTab
+Usage:
+    python main.py               # random free port, opens the browser
+    python main.py --port 8765   # fixed port
+    python main.py --no-browser  # just print the URL
+"""
+
+import argparse
+import threading
+import webbrowser
+
+from server import create_server
 
 APP_VERSION = "1.0.0"
 
 
-def apply_dark_theme(root):
-    """Force a dark colour scheme on the entire app."""
-    style = ttk.Style(root)
-    # Use a base theme that supports customisation (clam works everywhere)
-    style.theme_use("clam")
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="project_to_markdown",
+        description="Bridge your local projects to free chat LLMs – "
+                    "no API keys needed.",
+    )
+    parser.add_argument(
+        "-p",
+        "--port",
+        type=int,
+        default=0,
+        help="port to serve on (0 = a random free port, default)",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help=(
+            "address to bind to (default: 127.0.0.1, loopback only). "
+            "Use 0.0.0.0 to expose the server to a Docker container or "
+            "the local network."
+        ),
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="do not open the web browser automatically",
+    )
+    args = parser.parse_args()
 
-    # ----- colour palette -----
-    bg = "#1e1e1e"
-    fg = "#dcdcdc"
-    select_bg = "#3a3a3a"
-    accent = "#e53935"
+    server = create_server(host=args.host, port=args.port)
+    host, port = server.server_address[0], server.server_address[1]
+    url = f"http://{host}:{port}/"
 
-    root.configure(bg=bg)
+    print(f"ProjectToMarkdown v{APP_VERSION}", flush=True)
+    print(f"Serving on {url}  (press Ctrl+C to quit)", flush=True)
 
-    # General widget defaults
-    style.configure(".", background=bg, foreground=fg, fieldbackground=bg)
-    style.configure("TLabel", background=bg, foreground=fg)
-    style.configure("TFrame", background=bg)
-    style.configure("TLabelframe", background=bg, foreground=fg)
-    style.configure("TLabelframe.Label", background=bg, foreground=fg)
-    style.configure("TNotebook", background=bg, borderwidth=0)
-    style.configure("TNotebook.Tab", background=select_bg, foreground=fg, padding=[12, 4])
-    style.map("TNotebook.Tab", background=[("selected", accent)], foreground=[("selected", "#ffffff")])
+    if not args.no_browser:
+        # Give the server a moment before the browser fires its first request.
+        threading.Timer(0.4, lambda: webbrowser.open(url)).start()
 
-    style.configure("TButton", background=select_bg, foreground=fg, borderwidth=1, padding=6)
-    style.map("TButton", background=[("active", accent)], foreground=[("active", "#ffffff")])
-
-    style.configure("TEntry", fieldbackground="#2d2d2d", foreground=fg, insertcolor=fg)
-    style.configure("TRadiobutton", background=bg, foreground=fg)
-    style.configure("TCheckbutton", background=bg, foreground=fg)
-
-    style.configure("Treeview", background="#2d2d2d", foreground=fg, fieldbackground="#2d2d2d")
-    style.map("Treeview", background=[("selected", accent)], foreground=[("selected", "#ffffff")])
-
-    style.configure("TProgressbar", background=accent, troughcolor="#2d2d2d", bordercolor="#2d2d2d")
-    style.configure("TScrollbar", background=select_bg, troughcolor=bg, bordercolor=bg, arrowcolor=fg)
-    style.map("TScrollbar", background=[("active", accent)])
-
-    style.configure("TSeparator", background=select_bg)
-
-    # Make the window background consistent
-    root.configure(bg=bg)
-
-
-class ProjectToMarkdownApp:
-    def __init__(self):
-        self.window = tk.Tk()
-        self.window.title("ProjectToMarkdown")
-        self.window.geometry("1000x700")
-        self.window.minsize(800, 500)
-
-        # ----- apply dark theme -----------------
-        apply_dark_theme(self.window)
-
-        self.notebook = ttk.Notebook(self.window)
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-        # Shared state
-        self.current_project_root = None
-        self.generated_markdown = ""
-        self.parsed_changes = {}
-        self.file_contents = {}   # relative path -> original content (for patching)
-
-        # Tabs
-        self.export_tab = ExportTab(self)
-        self.apply_tab = ApplyTab(self)
-        self.settings_tab = SettingsTab(self)
-
-        self.notebook.add(self.export_tab, text="Export")
-        self.notebook.add(self.apply_tab, text="Project Builder")
-        self.notebook.add(self.settings_tab, text="Settings")
-
-        self.window.mainloop()
-
-    def show_error(self, message):
-        messagebox.showerror("Error", message, parent=self.window)
-
-    def show_info(self, message):
-        messagebox.showinfo("Info", message, parent=self.window)
-
-    def show_about_dialog(self):
-        messagebox.showinfo(
-            "About ProjectToMarkdown",
-            f"ProjectToMarkdown v{APP_VERSION}\n\n"
-            "Bridge your local projects to free chat LLMs.\n"
-            "https://github.com/dilaferaw/project-to-markdown\n\n"
-            "Developed by Dilaferaw",
-            parent=self.window,
-        )
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nShutting down…")
+    finally:
+        server.server_close()
 
 
 if __name__ == "__main__":
-    ProjectToMarkdownApp()
+    main()

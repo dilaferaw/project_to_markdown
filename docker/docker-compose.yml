@@ -1,0 +1,49 @@
+# ============================================================================
+# Docker Compose — run project-to-markdown as a local web app
+#
+# Compose is the recommended path.  Builds the image from ./docker/ (the
+# Dockerfile lives one level up: ../docker/Dockerfile) and mounts a *data*
+# volume so your settings, backups and per-project history persist across
+# container restarts.  The server binds 0.0.0.0:8765 inside the container
+# and is mapped to the host, so open http://localhost:8765 in your browser.
+#
+# .env (optional) — set HOST/PORT to override the defaults:
+#   HOST=0.0.0.0   # bind address inside the container (do not change for LAN use)
+#   PORT=8765      # port exposed on the host
+# ============================================================================
+services:
+  ptm:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+      args:
+        BUILD_SHA: ${BUILD_SHA:-local}
+    image: dilaferaw/project-to-markdown:latest
+    container_name: ptm
+    hostname: ptm
+    restart: unless-stopped
+    # Bind 0.0.0.0 inside the container → host 127.0.0.1:8765 (or $PORT)
+    ports:
+      - "${PORT:-8765}:8765"
+    environment:
+      - HOST=${HOST:-0.0.0.0}
+      - PORT=${PORT:-8765}
+      - PTM_CONFIG_DIR=/data/ptm
+    volumes:
+      # Persist config + backups + parse history across container lifecycle
+      - ptm_data:/data
+      # Optional: mount your project tree so the *server* can reach it
+      # - /path/on/host/project:/data/projects:ro
+    tmpfs:
+      - /tmp
+      - /var/tmp
+
+volumes:
+  ptm_data:
+    driver: local
+
+# Network defaults to the default compose network (bridge).  Add this section
+# only if you need the container to join a specific network, e.g.:
+# networks:
+#   default:
+#     name: ptm-net

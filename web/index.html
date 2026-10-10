@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ProjectToMarkdown</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <div class="brand">ProjectToMarkdown <span class="muted">v1.0.0</span></div>
+  <nav>
+    <button class="tab-btn active" data-tab="export">Export</button>
+    <button class="tab-btn" data-tab="apply">Project Builder</button>
+    <button class="tab-btn" data-tab="settings">Settings</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ============ EXPORT TAB ============ -->
+  <section id="tab-export" class="tab active">
+    <div class="row">
+      <input type="text" id="project-path" placeholder="Project folder path…" spellcheck="false">
+      <button id="btn-browse-project">Browse…</button>
+      <button id="btn-scan" class="primary">Scan Project</button>
+    </div>
+
+    <div class="panel grow">
+      <div class="panel-head">
+        <span>Files <span id="file-count" class="muted"></span></span>
+        <span class="head-actions">
+          <button id="btn-select-all">Select All</button>
+          <button id="btn-select-none">Select None</button>
+        </span>
+      </div>
+      <div id="file-list" class="check-list"><div class="empty muted">Scan a project to list its files.</div></div>
+    </div>
+
+    <div class="row">
+      <button id="btn-generate" class="primary" disabled>Generate Markdown from Selected</button>
+      <span id="token-label" class="muted"></span>
+    </div>
+
+    <div class="row wrap">
+      <button id="btn-copy-md" disabled>Copy Markdown</button>
+      <button id="btn-save-md" disabled>Save Markdown…</button>
+      <button id="btn-full-prompt" disabled>Full Prompt &amp; Copy</button>
+      <button id="btn-save-prompt" disabled>Save Full Prompt…</button>
+      <button id="btn-system-prompt">Copy System Prompt</button>
+    </div>
+
+    <div class="panel grow">
+      <div class="panel-head"><span>Preview</span></div>
+      <pre id="preview" class="mono preview"><span class="muted">Generated markdown appears here.</span></pre>
+    </div>
+  </section>
+  <!-- ============ PROJECT BUILDER TAB ============ -->
+  <section id="tab-apply" class="tab">
+    <label class="lbl" for="ai-response">Paste AI response below</label>
+    <textarea id="ai-response" class="mono grow" placeholder="Paste the AI's full reply here…" spellcheck="false"></textarea>
+
+    <div class="row">
+      <button id="btn-parse" class="primary">Parse Response</button>
+      <button id="btn-clear">Clear</button>
+      <span id="parse-stats" class="muted"></span>
+    </div>
+
+    <div id="parse-messages" class="messages"></div>
+
+    <div class="panel grow">
+      <div class="panel-head">
+        <span>Changes</span>
+        <span id="change-count" class="muted"></span>
+      </div>
+      <div id="change-list" class="check-list"><div class="empty muted">Parsed changes appear here.</div></div>
+    </div>
+
+    <fieldset class="modes">
+      <legend>Apply mode</legend>
+      <label><input type="radio" name="mode" value="inplace" checked> Modify original project (with backup)</label>
+      <label><input type="radio" name="mode" value="export"> Export to new folder from existing project</label>
+      <label><input type="radio" name="mode" value="create"> Create new project from scratch</label>
+    </fieldset>
+
+    <div class="row dest-row hidden" id="dest-row">
+      <input type="text" id="dest-path" placeholder="Destination folder…" spellcheck="false">
+      <button id="btn-browse-dest">Browse…</button>
+    </div>
+
+    <div class="row">
+      <button id="btn-apply" class="danger">Apply Selected Changes</button>
+    </div>
+
+    <div id="apply-report" class="messages"></div>
+  </section>
+
+  <!-- ============ SETTINGS TAB ============ -->
+  <section id="tab-settings" class="tab">
+    <div class="panel">
+      <div class="panel-head"><span>Text File Extensions</span><span class="muted">one per line</span></div>
+      <textarea id="set-extensions" class="mono" rows="7" spellcheck="false"></textarea>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span>Excluded Directories</span><span class="muted">one per line</span></div>
+      <textarea id="set-dirs" class="mono" rows="5" spellcheck="false"></textarea>
+    </div>
+    <div class="row wrap settings-row">
+      <label>Max File Size (KB): <input type="number" id="set-size" min="1" step="1"></label>
+      <label class="check"><input type="checkbox" id="set-autosave"> Auto-save output to project folder</label>
+    </div>
+    <div class="row wrap">
+      <button id="btn-settings-save" class="primary">Save Settings</button>
+      <button id="btn-settings-reset">Reset to Defaults</button>
+      <button id="btn-about">About</button>
+    </div>
+  </section>
+</main>
+
+<!-- ============ FOLDER PICKER MODAL ============ -->
+<div id="modal-picker" class="modal hidden">
+  <div class="box">
+    <div class="box-head"><span id="picker-title">Choose a folder</span></div>
+    <div class="row">
+      <button id="picker-up" title="Parent folder">↑ Up</button>
+      <input type="text" id="picker-path" class="mono" spellcheck="false">
+    </div>
+    <div id="picker-list" class="check-list dir-list"></div>
+    <div class="box-foot">
+      <span id="picker-error" class="err"></span>
+      <button id="picker-cancel">Cancel</button>
+      <button id="picker-choose" class="primary">Use This Folder</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SAVE FILE MODAL ============ -->
+<div id="modal-save" class="modal hidden">
+  <div class="box">
+    <div class="box-head"><span id="save-title">Save as</span></div>
+    <div class="row">
+      <input type="text" id="save-path" class="mono" spellcheck="false" placeholder="/absolute/path/file.md">
+    </div>
+    <div class="box-foot">
+      <span id="save-error" class="err"></span>
+      <button id="save-cancel">Cancel</button>
+      <button id="save-confirm" class="primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIRM / INFO MODAL ============ -->
+<div id="modal-confirm" class="modal hidden">
+  <div class="box narrow">
+    <div class="box-head"><span id="confirm-title">Confirm</span></div>
+    <div id="confirm-message" class="confirm-msg"></div>
+    <div class="box-foot">
+      <button id="confirm-cancel">Cancel</button>
+      <button id="confirm-ok" class="primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>window.PTM_TOKEN = "__PTM_TOKEN__";</script>
+<script src="/static/app.js"></script>
+</body>
+</html>
