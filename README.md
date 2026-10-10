@@ -87,41 +87,6 @@ python main.py --no-browser # just print the URL
 python main.py --host 0.0.0.0 -p 8765  # expose to the LAN
 ```
 
-## Requirements
-
-- Python 3.12+
-- `tiktoken` (optional) – `pip install tiktoken`
-- `tree` (optional, Linux) – prettier directory tree output
-
-## Project structure
-
-```text
-project_to_markdown/
-├── main.py                  # Entry point – starts the local web server
-├── server.py                # Loopback HTTP server + JSON API (stdlib only)
-├── utils.py                 # Shared constants, token counting
-├── core/
-│   ├── applier.py           # Applies changes to filesystem
-│   ├── config.py            # JSON config, sanitised on load
-│   ├── file_utils.py        # File type detection, tree generation
-│   ├── markdown_builder.py  # Builds the export Markdown
-│   ├── prompt_template.py   # Foolproof system prompt
-│   └── response_parser.py   # Parses structured AI replies
-├── web/
-│   ├── index.html           # App shell (tabs + modals)
-│   ├── app.js               # Front-end logic
-│   └── style.css            # Dark theme
-├── docker/                  # Docker multi-stage build + compose
-│   ├── Dockerfile
-│   └── docker-compose.yml
-├── tests/                   # pytest suite: parser, applier, builder, utils, config, server
-├── README.md
-├── LICENSE
-├── .gitignore
-├── requirements.txt
-└── install.sh
-```
-
 ## License
 
 GPL‑3.0 – see [LICENSE](LICENSE) for full text.
