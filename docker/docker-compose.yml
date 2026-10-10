@@ -30,10 +30,11 @@ services:
       - PORT=${PORT:-8765}
       - PTM_CONFIG_DIR=/data/ptm
     volumes:
-      # Persist config + backups + parse history across container lifecycle
       - ptm_data:/data
-      # Optional: mount your project tree so the *server* can reach it
-      # - /path/on/host/project:/data/projects:ro
+      # Optional: mount your project tree so the container can reach it.
+      # On SELinux hosts (Fedora, Silverblue, RHEL, ...) the :Z suffix is
+      # required so the container is allowed to read the relabelled files.
+      # - /path/on/host/project:/data/projects:ro,Z
     tmpfs:
       - /tmp
       - /var/tmp
